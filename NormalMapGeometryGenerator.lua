@@ -1,7 +1,10 @@
 local dialog = Dialog("Normal Map Shape Generator")
 
 function coordToColor(coord)
-  return roundTo((coord / 2 + 0.5) * 255, tonumber(dialog.data.roundedTo))
+  local colorNumber = (coord / 2 + 0.5) * (255 - dialog.data.imperfectionRange)
+  colorNumber = roundTo(colorNumber, tonumber(dialog.data.roundedTo))
+  colorNumber = math.random(colorNumber, colorNumber + dialog.data.imperfectionRange)
+  return colorNumber
 end
 
 function roundTo(number, to)
@@ -85,6 +88,12 @@ dialog:entry {
   id="roundedTo",
   label = "Rounded To: ",
   text = "1"
+}
+
+dialog:entry {
+  id="imperfectionRange",
+  label = "Imperfection Range: ",
+  text = "0"
 }
 
 dialog:button {
