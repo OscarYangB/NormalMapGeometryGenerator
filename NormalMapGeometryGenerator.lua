@@ -31,9 +31,12 @@ function drawNormal()
   local width = tonumber(dialog.data.width)
   local height = tonumber(dialog.data.height)
   local depth = tonumber(dialog.data.depth)
+  
   local layer = getLayer(dialog.data.outputLayer)
   
-  local outputImage = Image(width, height)
+  local xOffset = height > width and (height - width) / 2 or 0
+  local yOffset = width > height and (width - height) / 2 or 0
+  local outputImage = Image(width + xOffset * 2, height + yOffset * 2)
   
   for x = 0, width do
     for y = 0, height do
@@ -45,22 +48,33 @@ function drawNormal()
         goto continue
       end
       
+      local angle = math.rad(tonumber(dialog.data.rotation))
+      local rotatedX = relativeX*math.cos(angle) - relativeY*math.sin(angle)
+      local rotatedY = relativeY*math.cos(angle) + relativeX*math.sin(angle)
+      
       local z = math.sqrt(zSquared)
       local magnitude = math.sqrt(relativeX^2 + relativeY^2 + z^2)
       local color = Color { 
-        r = coordToColor(relativeX / magnitude), 
-        g = coordToColor(-relativeY / magnitude), 
+        r = coordToColor(rotatedX / magnitude), 
+        g = coordToColor(-rotatedY / magnitude), 
         b = coordToColor(z / magnitude), 
       }
-
-      outputImage:drawPixel(x, y, color)
+      
+      local drawX = rotatedX + xOffset + width / 2
+      local drawY = rotatedY + yOffset + height / 2
+      outputImage:drawPixel(drawX, drawY, color)
+      
+      -- Hack to deal with rounding after rotation causing missing pixels
+      if app.pixelColor.rgbaA(outputImage:getPixel(drawX, drawY + 1)) == 0 then
+        outputImage:drawPixel(drawX, drawY + 1, color)
+      end
       
       ::continue::
     end
   end
   
   app.activeSprite:newCel(layer, 1, outputImage, 
-    Point(tonumber(dialog.data.xPosition) - width / 2, tonumber(dialog.data.yPosition) - height / 2))
+    Point(tonumber(dialog.data.xPosition) - width / 2 - xOffset, tonumber(dialog.data.yPosition) - height / 2 - yOffset))
   app.refresh()
 end
 
