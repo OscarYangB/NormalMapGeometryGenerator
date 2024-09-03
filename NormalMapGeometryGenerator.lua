@@ -1,9 +1,10 @@
 local dialog = Dialog("Normal Map Shape Generator")
 
 function coordToColor(coord)
-  local colorNumber = (coord / 2 + 0.5) * (255 - dialog.data.imperfectionRange)
-  colorNumber = roundTo(colorNumber, tonumber(dialog.data.roundedTo))
-  colorNumber = math.random(colorNumber, colorNumber + dialog.data.imperfectionRange)
+  local colorNumber = (coord / 2 + 0.5) * (255 - dialog.data.noise)
+  colorNumber = roundTo(colorNumber, tonumber(dialog.data.preround))
+  colorNumber = math.random(colorNumber, colorNumber + dialog.data.noise)
+  colorNumber = roundTo(colorNumber, tonumber(dialog.data.postround))
   return colorNumber
 end
 
@@ -48,16 +49,20 @@ function drawNormal()
         goto continue
       end
       
+      local z = math.sqrt(zSquared)
+      
       local angle = math.rad(tonumber(dialog.data.rotation))
       local rotatedX = relativeX*math.cos(angle) - relativeY*math.sin(angle)
       local rotatedY = relativeY*math.cos(angle) + relativeX*math.sin(angle)
       
-      local z = math.sqrt(zSquared)
-      local magnitude = math.sqrt(relativeX^2 + relativeY^2 + z^2)
+      local normalX = rotatedX / (width/2)^2
+      local normalY = -rotatedY / (height/2)^2
+      local normalZ = z / (depth/2)^2
+      local magnitude = math.sqrt(normalX^2 + normalY^2 + normalZ^2)
       local color = Color { 
-        r = coordToColor(rotatedX / magnitude), 
-        g = coordToColor(-rotatedY / magnitude), 
-        b = coordToColor(z / magnitude), 
+        r = coordToColor(normalX / magnitude), 
+        g = coordToColor(normalY / magnitude), 
+        b = coordToColor(normalZ / magnitude), 
       }
       
       local drawX = rotatedX + xOffset + width / 2
@@ -75,6 +80,7 @@ function drawNormal()
   
   app.activeSprite:newCel(layer, 1, outputImage, 
     Point(tonumber(dialog.data.xPosition) - width / 2 - xOffset, tonumber(dialog.data.yPosition) - height / 2 - yOffset))
+  
   app.refresh()
 end
 
@@ -82,6 +88,11 @@ dialog:entry {
   id="outputLayer",
   label = "Output Layer: ",
   text = "Output"
+}
+
+dialog:separator {
+  id="sep1", 
+  text="Transform"
 }
 
 dialog:entry {
@@ -120,16 +131,27 @@ dialog:entry {
   text = "0"
 }
 
+dialog:separator {
+  id="sep2", 
+  text="Effects"
+}
+
 dialog:entry {
-  id="roundedTo",
-  label = "Rounded To: ",
+  id="preround",
+  label = "Pre-Noise Rounding: ",
   text = "1"
 }
 
 dialog:entry {
-  id="imperfectionRange",
-  label = "Imperfection Range: ",
+  id="noise",
+  label = "Noise: ",
   text = "0"
+}
+
+dialog:entry {
+  id="postround",
+  label = "Post-Noise Rounding: ",
+  text = "1"
 }
 
 dialog:button {
