@@ -28,35 +28,39 @@ function getLayer(layerName)
 end
 
 function drawNormal()
-  local radius = tonumber(dialog.data.radius)
+  local width = tonumber(dialog.data.width)
+  local height = tonumber(dialog.data.height)
+  local depth = tonumber(dialog.data.depth)
   local layer = getLayer(dialog.data.outputLayer)
   
-  local outputImage = Image(radius * 2, radius * 2)
+  local outputImage = Image(width, height)
   
-  for x = -radius, radius do
-    for y = -radius, radius do
-      local zSquared = radius^2 - x^2 - y^2;
+  for x = 0, width do
+    for y = 0, height do
+      local relativeX = x - width / 2
+      local relativeY = y - height / 2
+      local zSquared = (depth/2)^2 * (1 - relativeX^2 / (width/2)^2 - relativeY^2 / (height/2)^2);
       
       if zSquared < 0 then
         goto continue
       end
       
       local z = math.sqrt(zSquared)
-      local magnitude = math.sqrt(x^2 + y^2 + z^2)
+      local magnitude = math.sqrt(relativeX^2 + relativeY^2 + z^2)
       local color = Color { 
-        r = coordToColor(x / magnitude), 
-        g = coordToColor(-y / magnitude), 
+        r = coordToColor(relativeX / magnitude), 
+        g = coordToColor(-relativeY / magnitude), 
         b = coordToColor(z / magnitude), 
       }
 
-      outputImage:drawPixel(x + radius, y + radius, color)
+      outputImage:drawPixel(x, y, color)
       
       ::continue::
     end
   end
   
   app.activeSprite:newCel(layer, 1, outputImage, 
-    Point(tonumber(dialog.data.xPosition) - radius, tonumber(dialog.data.yPosition) - radius))
+    Point(tonumber(dialog.data.xPosition) - width / 2, tonumber(dialog.data.yPosition) - height / 2))
   app.refresh()
 end
 
@@ -79,9 +83,27 @@ dialog:entry {
 }
 
 dialog:entry {
-  id="radius",
-  label = "Radius: ",
+  id="width",
+  label = "Width: ",
   text = "10"
+}
+
+dialog:entry {
+  id="height",
+  label = "Height: ",
+  text = "10"
+}
+
+dialog:entry {
+  id="depth",
+  label = "Depth: ",
+  text = "10"
+}
+
+dialog:entry {
+  id="rotation",
+  label = "Rotation (Degrees): ",
+  text = "0"
 }
 
 dialog:entry {
